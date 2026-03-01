@@ -108,7 +108,7 @@ export function ToolWorkspace({ onPreview, workspaceState, setWorkspaceState }: 
           updateState({ state: 'processing', statusMessage: msg });
         },
         onStatusUpdate: (status) => {
-          updateState({ taskId: status.task_id, state: 'processing' });
+          updateState({ taskId: status.taskId, state: 'processing' });
           if (status.status === 'processing') {
             updateState({ statusMessage: '正在生成 3D 模型...' });
           }
@@ -294,9 +294,11 @@ export function ToolWorkspace({ onPreview, workspaceState, setWorkspaceState }: 
                 </div>
                 <div className="text-center">
                   <p className="text-lg font-medium text-gray-900 mb-2">处理完成！</p>
-                  <p className="text-gray-600">
-                    文件大小：{result.result?.file_size_mb?.toFixed(2)} MB
-                  </p>
+                  {result.resultKey && (
+                    <p className="text-gray-600">
+                      结果文件：{result.resultKey}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex gap-3">

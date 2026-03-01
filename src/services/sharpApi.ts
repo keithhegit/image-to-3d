@@ -1,7 +1,7 @@
 // SHARP API 客户端
 // 图生3D API 调用封装
 
-const API_BASE_URL = import.meta.env.VITE_SHARP_API_BASE_URL || 'https://image-to-3d-api.keithhe2021.workers.dev';
+const API_BASE_URL = import.meta.env.VITE_SHARP_API_BASE_URL || 'https://u184490-b122-43342448.westb.seetacloud.com:8443/sharp/api/v1';
 
 // API 响应类型
 export interface UploadResponse {
@@ -14,13 +14,15 @@ export interface TaskStatusResponse {
   status: 'pending' | 'processing' | 'completed' | 'failed';
   message?: string;
   resultKey?: string;
+  error?: string;
   raw?: any;
 }
 
 export interface ExecuteResponse {
   taskId: string;
-  inputKey: string;
-  resultKey: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  message?: string;
+  startedAt?: string;
 }
 
 // 处理 API 响应
@@ -35,6 +37,14 @@ async function handleResponse(response: Response): Promise<any> {
   return response.json();
 }
 
+async function parseErrorMessage(response: Response): Promise<string> {
+  const error = await response.json().catch(() => ({
+    error: 'Unknown error',
+    message: `HTTP ${response.status}: ${response.statusText}`,
+  }));
+  return error.message || error.error || 'Request failed';
+}
+
 // 上传图片
 export async function uploadImage(file: File): Promise<UploadResponse> {
   const formData = new FormData();
@@ -45,26 +55,47 @@ export async function uploadImage(file: File): Promise<UploadResponse> {
     body: formData,
   });
 
-  return handleResponse(response);
+  const data = await handleResponse(response);
+  return {
+    taskId: data.task_id,
+    objectKey: data.uploaded_file?.path || data.task_id,
+  };
 }
 
 // 执行处理任务
-export async function executeTask(taskId: string, inputKey: string): Promise<ExecuteResponse> {
-  const response = await fetch(`${API_BASE_URL}/tasks`, {
+export async function executeTask(taskId: string): Promise<ExecuteResponse> {
+  const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/execute`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ taskId, inputKey }),
+    body: JSON.stringify({
+      output_dir: '/root/autodl-tmp/ml-sharp/result/',
+      model_path: '/root/autodl-tmp/ml-sharp/ml-site.cdn-apple.com/models/sharp/sharp_2572gikvuh.pt',
+    }),
   });
 
-  return handleResponse(response);
+  const data = await handleResponse(response);
+  return {
+    taskId: data.task_id,
+    status: data.status,
+    message: data.message,
+    startedAt: data.started_at,
+  };
 }
 
 // 查询任务状态
 export async function getTaskStatus(taskId: string): Promise<TaskStatusResponse> {
   const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`);
-  return handleResponse(response);
+  const data = await handleResponse(response);
+  return {
+    taskId: data.task_id,
+    status: data.status,
+    message: data.message,
+    resultKey: data.result?.output_file,
+    error: data.error,
+    raw: data,
+  };
 }
 
 // 轮询任务状态
@@ -130,9 +161,13 @@ export async function pollTaskStatus(
 
 // 下载结果文件
 export async function downloadTaskResult(taskId: string, filename = 'result.ply'): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/download/${taskId}`);
-  const data = await handleResponse(response);
-  const url = data.url;
+  const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/download`);
+  if (!response.ok) {
+    const message = await parseErrorMessage(response);
+    throw new Error(message);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
@@ -140,15 +175,15 @@ export async function downloadTaskResult(taskId: string, filename = 'result.ply'
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // 获取 PLY 文件数据（用于预览）
 export async function fetchPlyData(taskId: string): Promise<ArrayBuffer> {
-  const downloadResponse = await fetch(`${API_BASE_URL}/download/${taskId}`);
-  const downloadData = await handleResponse(downloadResponse);
-  const response = await fetch(downloadData.url);
+  const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/download`);
   if (!response.ok) {
-    throw new Error(`获取 PLY 文件失败: ${response.statusText}`);
+    const message = await parseErrorMessage(response);
+    throw new Error(message);
   }
   return response.arrayBuffer();
 }
@@ -180,7 +215,7 @@ export async function processImage(
     if (onUploadProgress) onUploadProgress('上传完成');
 
     if (onExecuteProgress) onExecuteProgress('开始处理...');
-    await executeTask(uploadData.taskId, uploadData.objectKey);
+    await executeTask(uploadData.taskId);
     if (onExecuteProgress) onExecuteProgress('处理中...');
 
     const result = await pollTaskStatus(uploadData.taskId, {

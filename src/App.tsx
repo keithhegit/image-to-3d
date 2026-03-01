@@ -61,7 +61,7 @@ function App() {
             <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
               3D
             </div>
-            <span className="text-xl font-bold text-gray-900 tracking-tight">Sharp Image to 3D</span>
+            <span className="text-xl font-bold text-gray-900 tracking-tight">Flat2Splat - 照片升维</span>
           </div>
           <div className="text-sm text-gray-500">Standalone Version</div>
         </div>
@@ -91,7 +91,7 @@ function App() {
 
       {!previewData && (
         <footer className="max-w-6xl mx-auto px-6 py-12 text-center text-gray-400 text-sm shrink-0">
-          &copy; {new Date().getFullYear()} Sharp Image to 3D Standalone. 部署在 Cloudflare.
+          &copy; 2026 Flat2Splat. All rights reserved by Keith He.
         </footer>
       )}
     </div>

@@ -1,7 +1,7 @@
 // PLY 3D模型预览组件（Gaussian Splat 渲染）
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, HelpCircle } from 'lucide-react';
 
 interface PlyPreviewProps {
   plyData: ArrayBuffer;
@@ -45,6 +45,46 @@ function parsePlyHeader(plyData: ArrayBuffer): ParsedPlyHeader {
   };
 }
 
+// 新手引导层
+function TutorialOverlay({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="absolute inset-0 bg-black/60 z-50 flex items-center justify-center cursor-pointer" onClick={onClose}>
+      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 max-w-sm text-center text-white animate-in fade-in zoom-in duration-300 shadow-2xl">
+        <h3 className="text-2xl font-bold mb-8">操作指南</h3>
+        <div className="space-y-6">
+          <div className="flex items-center gap-6">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-3xl">👆</div>
+            <div className="text-left">
+              <p className="font-bold text-lg">单指拖动</p>
+              <p className="text-sm text-gray-300">旋转模型视角</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-3xl">✌️</div>
+            <div className="text-left">
+              <p className="font-bold text-lg">双指捏合 / 滚轮</p>
+              <p className="text-sm text-gray-300">缩放模型大小</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-3xl">✋</div>
+            <div className="text-left">
+              <p className="font-bold text-lg">双指/右键拖动</p>
+              <p className="text-sm text-gray-300">平移模型位置</p>
+            </div>
+          </div>
+        </div>
+        <button 
+          className="mt-10 w-full py-4 bg-purple-600 hover:bg-purple-500 rounded-xl font-bold text-lg transition-colors shadow-lg"
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
+        >
+          开始预览
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // 加载状态组件
 function LoadingSpinner() {
   return (
@@ -59,6 +99,7 @@ export function PlyPreview({ plyData, fileName, onBack }: PlyPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showTutorial, setShowTutorial] = useState(true);
   const parsedHeader = useMemo(() => {
     try {
       return parsePlyHeader(plyData);
@@ -82,9 +123,9 @@ export function PlyPreview({ plyData, fileName, onBack }: PlyPreviewProps) {
 
     const viewer = new GaussianSplats3D.Viewer({
       rootElement: container,
-      cameraUp: [0, -1, -0.6],
-      initialCameraPosition: [-1, -4, 6],
-      initialCameraLookAt: [0, 4, 0],
+      cameraUp: [0, -1, 0], // 调整为更标准的垂直向上 (Y轴负向适配模型坐标系)
+      initialCameraPosition: [0, 2, -3], // 调整相机位置到背面 (假设原位置 Z=6 是背面，尝试 Z=-3 且更近以放大)
+      initialCameraLookAt: [0, 0, 0], // 看向原点
       // 禁用 SharedArrayBuffer，避免本地开发时 cross-origin isolation 要求导致渲染失败。
       sharedMemoryForWorkers: false,
       gpuAcceleratedSort: false,
@@ -168,10 +209,19 @@ export function PlyPreview({ plyData, fileName, onBack }: PlyPreviewProps) {
             <ArrowLeft className="w-5 h-5" />
             <span>返回</span>
           </button>
-          <div className="text-white font-medium truncate max-w-md">
-            {fileName}
+          <div className="flex items-center gap-4">
+             <div className="text-white font-medium truncate max-w-xs sm:max-w-md">
+              {fileName}
+            </div>
+            <button 
+              onClick={() => setShowTutorial(true)}
+              className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+              title="操作指南"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
           </div>
-          <div className="text-gray-400 text-sm flex items-center gap-4">
+          <div className="text-gray-400 text-sm flex items-center gap-4 hidden md:flex">
             {modelInfo && (
               <span>
                 {modelInfo.vertexCount.toLocaleString()} 顶点
@@ -186,11 +236,12 @@ export function PlyPreview({ plyData, fileName, onBack }: PlyPreviewProps) {
       </div>
 
       {/* 3D 画布 */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative overflow-hidden">
         <div ref={containerRef} className="absolute inset-0" />
         {isLoading && (
           <LoadingSpinner />
         )}
+        {showTutorial && <TutorialOverlay onClose={() => setShowTutorial(false)} />}
       </div>
     </div>
   );

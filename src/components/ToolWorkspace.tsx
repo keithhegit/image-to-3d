@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Upload, Box, Download, Loader2, CheckCircle, XCircle, Image as ImageIcon, Eye } from 'lucide-react';
 import {
   processImage,
@@ -37,6 +37,27 @@ export function ToolWorkspace({ onPreview, workspaceState, setWorkspaceState }: 
 
   const { selectedFile, previewUrl, state, statusMessage, taskId, result, error } = workspaceState;
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  // 伪进度条逻辑
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (state === 'processing') {
+      setProgress(0);
+      interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 90) return prev; // 卡在 90%
+          // 前 40秒 (40000ms) 走到 90% -> 每 100ms 走 90/400 = 0.225
+          return prev + 0.2; 
+        });
+      }, 100);
+    } else if (state === 'completed') {
+      setProgress(100);
+    } else {
+      setProgress(0);
+    }
+    return () => clearInterval(interval);
+  }, [state]);
 
   // 统一更新状态
   const updateState = (updates: Partial<WorkspaceState>) => {
@@ -235,33 +256,80 @@ export function ToolWorkspace({ onPreview, workspaceState, setWorkspaceState }: 
             className="hidden"
           />
 
-          {/* 操作按钮 */}
-          <div className="mt-6 flex gap-3">
-            <button
-              onClick={handleGenerate}
-              disabled={!selectedFile || state === 'uploading' || state === 'processing'}
-              className="flex-1 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2 shadow-sm"
-            >
-              {state === 'uploading' || state === 'processing' ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  处理中...
-                </>
-              ) : (
-                <>
-                  <Box className="w-5 h-5" />
-                  生成 3D 模型
-                </>
-              )}
-            </button>
+          {/* 操作区域：进度条与按钮 */}
+          <div className="mt-6 space-y-4">
+            {state === 'processing' && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-gray-600 font-medium">
+                  <span>{statusMessage || '处理中...'}</span>
+                  <span>{Math.round(progress)}%</span>
+                </div>
+                <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-purple-600 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-400 text-center">预计需 40-50 秒，请耐心等待</p>
+              </div>
+            )}
 
-            {(state === 'completed' || state === 'failed' || error) && (
-              <button
-                onClick={handleReset}
-                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium border border-gray-200"
-              >
-                重置
-              </button>
+            {state === 'completed' ? (
+              <div className="grid grid-cols-2 gap-3">
+                 {onPreview && (
+                  <button
+                    onClick={handlePreview}
+                    disabled={isLoadingPreview}
+                    className="py-3 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 disabled:opacity-50 transition-colors font-medium flex items-center justify-center gap-2 border border-purple-200"
+                  >
+                    {isLoadingPreview ? <Loader2 className="w-5 h-5 animate-spin" /> : <Eye className="w-5 h-5" />}
+                    预览模型
+                  </button>
+                )}
+                <button
+                  onClick={handleDownload}
+                  className={`${onPreview ? '' : 'col-span-2'} py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium flex items-center justify-center gap-2 shadow-sm`}
+                >
+                  <Download className="w-5 h-5" />
+                  下载 .ply
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="col-span-2 py-2 text-gray-500 hover:text-gray-700 text-sm flex items-center justify-center gap-1"
+                >
+                  <XCircle className="w-4 h-4" />
+                  重新开始
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <button
+                  onClick={handleGenerate}
+                  disabled={!selectedFile || state === 'uploading' || state === 'processing'}
+                  className="flex-1 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2 shadow-sm"
+                >
+                  {state === 'uploading' || state === 'processing' ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      {state === 'uploading' ? '上传中...' : '生成中...'}
+                    </>
+                  ) : (
+                    <>
+                      <Box className="w-5 h-5" />
+                      开始生成 3D
+                    </>
+                  )}
+                </button>
+
+                {(state === 'failed' || error) && (
+                  <button
+                    onClick={handleReset}
+                    className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium border border-gray-200"
+                  >
+                    重置
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -301,33 +369,9 @@ export function ToolWorkspace({ onPreview, workspaceState, setWorkspaceState }: 
                   )}
                 </div>
 
-                <div className="flex gap-3">
-                  {onPreview && (
-                    <button
-                      onClick={handlePreview}
-                      disabled={isLoadingPreview}
-                      className="flex-1 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2 shadow-sm"
-                    >
-                      {isLoadingPreview ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          加载中...
-                        </>
-                      ) : (
-                        <>
-                          <Eye className="w-5 h-5" />
-                          预览
-                        </>
-                      )}
-                    </button>
-                  )}
-                  <button
-                    onClick={handleDownload}
-                    className={`${onPreview ? 'flex-1' : 'w-full'} py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium flex items-center justify-center gap-2 shadow-sm`}
-                  >
-                    <Download className="w-5 h-5" />
-                    下载 3D 模型 (.ply)
-                  </button>
+                {/* 按钮组已移动到左侧 */}
+                <div className="text-center text-sm text-gray-500">
+                  <p>请在左侧预览或下载结果</p>
                 </div>
               </div>
             )}

@@ -57,13 +57,13 @@ function App() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <nav className="bg-white border-b border-gray-200 px-6 py-4 shrink-0">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
-              3D
-            </div>
+          <div className="flex items-center gap-3">
+            <img src="/icons/icon-128x128.png" alt="Logo" className="w-10 h-10 rounded-xl shadow-sm" />
             <span className="text-xl font-bold text-gray-900 tracking-tight">Flat2Splat - 照片升维</span>
           </div>
-          <div className="text-sm text-gray-500">Standalone Version</div>
+          <div className="hidden sm:block text-sm text-gray-500 font-medium bg-gray-100 px-3 py-1 rounded-full">
+            v1.0
+          </div>
         </div>
       </nav>
 

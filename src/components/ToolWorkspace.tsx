@@ -198,209 +198,158 @@ export function ToolWorkspace({ onPreview, workspaceState, setWorkspaceState }: 
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-12">
-      {/* 标题 */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-          <Box className="w-8 h-8 text-purple-600" />
-          {TOOL_CONFIG.name}
-        </h1>
-        <p className="text-gray-600">
-          {TOOL_CONFIG.description}
+    <div className="max-w-3xl mx-auto px-4 py-8">
+      {/* 极简说明 */}
+      <div className="mb-8 text-center space-y-2">
+        <p className="text-gray-600 text-lg">
+          Turn your 2D photos into 3D models instantly.
         </p>
+        <div className="flex items-center justify-center gap-2 text-sm text-gray-400 bg-gray-50 inline-block px-4 py-1.5 rounded-full mx-auto border border-gray-100">
+          <ImageIcon className="w-4 h-4" />
+          <span>支持 JPG、PNG、BMP、TIFF 格式</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* 左侧：上传区域 */}
-        <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-100">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">上传图片</h2>
+      <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 ring-1 ring-gray-100/50">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">上传图片</h2>
 
-          {/* 拖放上传区域 */}
-          <div
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
-            className={`
-              border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all
-              ${selectedFile ? 'border-purple-300 bg-purple-50' : 'border-gray-200 hover:border-purple-400 hover:bg-purple-50/50'}
-            `}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {previewUrl ? (
-              <div className="space-y-4">
+        {/* 拖放上传区域 */}
+        <div
+          onDrop={handleDrop}
+          onDragOver={(e) => e.preventDefault()}
+          className={`
+            border-3 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 relative overflow-hidden group
+            ${selectedFile ? 'border-purple-300 bg-purple-50/50' : 'border-gray-200 hover:border-purple-400 hover:bg-gray-50'}
+          `}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {previewUrl ? (
+            <div className="space-y-4 relative z-10">
+              <div className="relative inline-block group-hover:scale-[1.02] transition-transform duration-300">
                 <img
                   src={previewUrl}
                   alt="预览"
-                  className="max-h-64 mx-auto rounded-lg object-contain"
+                  className="max-h-64 mx-auto rounded-xl shadow-sm object-contain bg-white"
                 />
-                <p className="text-sm text-gray-600">{selectedFile?.name}</p>
-                <p className="text-xs text-gray-500">
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors rounded-xl" />
+              </div>
+              <div className="bg-white/80 backdrop-blur-sm inline-block px-4 py-2 rounded-lg shadow-sm border border-gray-100">
+                <p className="text-sm font-medium text-gray-900">{selectedFile?.name}</p>
+                <p className="text-xs text-gray-500 mt-0.5">
                   {selectedFile?.size ? formatFileSize(selectedFile.size) : '0'} MB
                 </p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <Upload className="w-16 h-16 mx-auto text-gray-400" />
-                <div>
-                  <p className="text-gray-700 font-medium">点击或拖放图片到此处</p>
-                  <p className="text-sm text-gray-500 mt-1">支持 JPG、PNG、BMP、TIFF（最大 1GB）</p>
-                </div>
+            </div>
+          ) : (
+            <div className="space-y-6 py-8">
+              <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300 text-purple-600">
+                <Upload className="w-10 h-10" />
               </div>
-            )}
-          </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/bmp,image/tiff"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-
-          {/* 操作区域：进度条与按钮 */}
-          <div className="mt-6 space-y-4">
-            {state === 'processing' && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-600 font-medium">
-                  <span>{statusMessage || '处理中...'}</span>
-                  <span>{Math.round(progress)}%</span>
-                </div>
-                <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-purple-600 rounded-full transition-all duration-300 ease-out"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-400 text-center">预计需 40-50 秒，请耐心等待</p>
+              <div>
+                <p className="text-gray-900 font-semibold text-lg">点击或拖放图片到此处</p>
+                <p className="text-sm text-gray-400 mt-2">最大支持 1GB 文件</p>
               </div>
-            )}
-
-            {state === 'completed' ? (
-              <div className="grid grid-cols-2 gap-3">
-                 {onPreview && (
-                  <button
-                    onClick={handlePreview}
-                    disabled={isLoadingPreview}
-                    className="py-3 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 disabled:opacity-50 transition-colors font-medium flex items-center justify-center gap-2 border border-purple-200"
-                  >
-                    {isLoadingPreview ? <Loader2 className="w-5 h-5 animate-spin" /> : <Eye className="w-5 h-5" />}
-                    预览模型
-                  </button>
-                )}
-                <button
-                  onClick={handleDownload}
-                  className={`${onPreview ? '' : 'col-span-2'} py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium flex items-center justify-center gap-2 shadow-sm`}
-                >
-                  <Download className="w-5 h-5" />
-                  下载 .ply
-                </button>
-                <button
-                  onClick={handleReset}
-                  className="col-span-2 py-2 text-gray-500 hover:text-gray-700 text-sm flex items-center justify-center gap-1"
-                >
-                  <XCircle className="w-4 h-4" />
-                  重新开始
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-3">
-                <button
-                  onClick={handleGenerate}
-                  disabled={!selectedFile || state === 'uploading' || state === 'processing'}
-                  className="flex-1 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2 shadow-sm"
-                >
-                  {state === 'uploading' || state === 'processing' ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      {state === 'uploading' ? '上传中...' : '生成中...'}
-                    </>
-                  ) : (
-                    <>
-                      <Box className="w-5 h-5" />
-                      开始生成 3D
-                    </>
-                  )}
-                </button>
-
-                {(state === 'failed' || error) && (
-                  <button
-                    onClick={handleReset}
-                    className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium border border-gray-200"
-                  >
-                    重置
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* 右侧：状态和结果 */}
-        <div className="space-y-6">
-          {/* 处理状态 */}
-          <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">处理状态</h2>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/bmp,image/tiff"
+          onChange={handleFileChange}
+          className="hidden"
+        />
 
-            {state === 'idle' && (
-              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                <ImageIcon className="w-16 h-16 mb-4 opacity-20" />
-                <p>上传图片并点击生成开始处理</p>
+        {/* 操作区域：进度条与按钮 */}
+        <div className="mt-8 space-y-6">
+          {state === 'processing' && (
+            <div className="space-y-3 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+              <div className="flex justify-between text-sm text-gray-900 font-bold">
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                  {statusMessage || '处理中...'}
+                </span>
+                <span className="text-purple-600">{Math.round(progress)}%</span>
               </div>
-            )}
-
-            {(state === 'uploading' || state === 'processing') && (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Loader2 className="w-16 h-16 text-purple-600 animate-spin mb-4" />
-                <p className="text-gray-700 font-medium">{statusMessage}</p>
-                <p className="text-sm text-gray-500 mt-2">这可能需要几分钟时间</p>
+              <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-purple-600 rounded-full transition-all duration-300 ease-out shadow-[0_0_10px_rgba(147,51,234,0.3)]"
+                  style={{ width: `${progress}%` }}
+                />
               </div>
-            )}
+              <p className="text-xs text-gray-500 text-center">预计需 40-50 秒，请保持页面开启</p>
+            </div>
+          )}
 
-            {state === 'completed' && result && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-center py-8 text-green-600">
-                  <CheckCircle className="w-16 h-16" />
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-medium text-gray-900 mb-2">处理完成！</p>
-                  {result.resultKey && (
-                    <p className="text-gray-600">
-                      结果文件：{result.resultKey}
-                    </p>
-                  )}
-                </div>
+          {state === 'completed' ? (
+            <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+               {onPreview && (
+                <button
+                  onClick={handlePreview}
+                  disabled={isLoadingPreview}
+                  className="py-4 bg-purple-50 text-purple-700 rounded-xl hover:bg-purple-100 disabled:opacity-50 transition-all font-bold text-lg flex items-center justify-center gap-2 border-2 border-purple-100 hover:border-purple-200 hover:shadow-md active:scale-[0.98]"
+                >
+                  {isLoadingPreview ? <Loader2 className="w-6 h-6 animate-spin" /> : <Eye className="w-6 h-6" />}
+                  预览模型
+                </button>
+              )}
+              <button
+                onClick={handleDownload}
+                className={`${onPreview ? '' : 'col-span-2'} py-4 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all font-bold text-lg flex items-center justify-center gap-2 shadow-lg shadow-purple-200 hover:shadow-purple-300 active:scale-[0.98]`}
+              >
+                <Download className="w-6 h-6" />
+                下载 .ply
+              </button>
+              <button
+                onClick={handleReset}
+                className="col-span-2 py-3 text-gray-400 hover:text-gray-600 text-sm flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <XCircle className="w-4 h-4" />
+                开始新任务
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-4">
+              <button
+                onClick={handleGenerate}
+                disabled={!selectedFile || state === 'uploading' || state === 'processing'}
+                className={`
+                  flex-1 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-lg
+                  ${!selectedFile || state === 'uploading' || state === 'processing' 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none' 
+                    : 'bg-purple-600 text-white hover:bg-purple-700 hover:shadow-purple-300 active:scale-[0.98]'}
+                `}
+              >
+                {state === 'uploading' || state === 'processing' ? (
+                  <>
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    {state === 'uploading' ? '上传中...' : '生成中...'}
+                  </>
+                ) : (
+                  <>
+                    <Box className="w-6 h-6" />
+                    开始生成 3D
+                  </>
+                )}
+              </button>
 
-                {/* 按钮组已移动到左侧 */}
-                <div className="text-center text-sm text-gray-500">
-                  <p>请在左侧预览或下载结果</p>
-                </div>
-              </div>
-            )}
-
-            {state === 'failed' && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-center py-8 text-red-600">
-                  <XCircle className="w-16 h-16" />
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-medium text-gray-900 mb-2">处理失败</p>
-                  <p className="text-gray-600 bg-red-50 p-3 rounded-lg text-sm border border-red-100">{error || '未知错误'}</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 使用说明 */}
-          <div className="bg-purple-50 rounded-2xl p-6 border border-purple-100">
-            <h3 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
-              <span className="text-lg">💡</span> 使用说明
-            </h3>
-            <ul className="text-sm text-purple-700 space-y-2">
-              <li>• 支持的图片格式：JPG、PNG、BMP、TIFF</li>
-              <li>• 建议上传清晰的正面图片以获得最佳效果</li>
-              <li>• 处理时间取决于图片大小，通常需要 1-3 分钟</li>
-              <li>• 输出格式为 .ply，可用 3D 编辑软件或在线预览器打开</li>
-            </ul>
-          </div>
+              {(state === 'failed' || error) && (
+                <button
+                  onClick={handleReset}
+                  className="px-6 py-4 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors font-bold border border-red-100"
+                >
+                  重试
+                </button>
+              )}
+            </div>
+          )}
+          
+          {error && (
+             <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm text-center border border-red-100 animate-in fade-in slide-in-from-top-2">
+               {error}
+             </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,7 +1,11 @@
 // SHARP API 客户端
 // 图生3D API 调用封装
 
-const API_BASE_URL = import.meta.env.VITE_SHARP_API_BASE_URL || 'https://u184490-b122-43342448.westb.seetacloud.com:8443/sharp/api/v1';
+const DEFAULT_API_BASE_URL = 'https://u184490-b122-43342448.westb.seetacloud.com:8443/sharp/api/v1';
+const envApiBaseUrl = import.meta.env.VITE_SHARP_API_BASE_URL;
+const API_BASE_URL = envApiBaseUrl && !envApiBaseUrl.includes('workers.dev')
+  ? envApiBaseUrl
+  : DEFAULT_API_BASE_URL;
 
 // API 响应类型
 export interface UploadResponse {
